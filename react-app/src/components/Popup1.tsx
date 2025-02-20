@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 import './PopupStyles.css'
 import '../routes/LoginRegisterStyles.css'
-function Popup1(props: { title: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | React.ReactFragment | React.ReactPortal | null | undefined; message: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | React.ReactFragment | React.ReactPortal | null | undefined; onClose: React.MouseEventHandler<HTMLButtonElement> | undefined; }){
+function Popup1(props: Readonly<{ 
+    title: React.ReactNode;
+    message: React.ReactNode;
+    onClose: React.MouseEventHandler<HTMLButtonElement> | undefined; 
+}>){
     const [email, setEmail] = useState('');
     const [pass, setPass] = useState('');
     const [name, setName] = useState('');
@@ -20,7 +24,7 @@ function Popup1(props: { title: string | number | boolean | React.ReactElement<a
             }
             return response;
           })
-          .then(data => {
+          .then(_ => {
               setIsRegisterSuccessful(true);
           })
           .catch(error => {
