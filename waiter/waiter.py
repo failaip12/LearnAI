@@ -1,6 +1,6 @@
 import pymongo
-import random
-import requests
+import os
+from openai import OpenAI
 from flask_cors import CORS
 from flask import Flask, request
 
@@ -10,6 +10,11 @@ global context
 context = ""
 client = pymongo.MongoClient("localhost", 27017, maxPoolSize=50)
 db = client["GPTDB"]
+
+# Initialize OpenAI client
+openai_client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY")  # Make sure to set this environment variable
+)
 
 @app.route("/", methods=["POST"])
 def handle_post():
@@ -57,39 +62,31 @@ def handle_post():
 
 
 class Waiter:
-    _urls = ["https://free.churchless.tech/v1/chat/completions"]
-
     def __init__(self, user_id) -> None:
         self.user_id = user_id
 
-    def getURL(self):
-        return random.choice(self._urls)
-
-    def request(self, wish) -> str:
-        url = self.getURL()
-        payload = {
-            "model": "gpt-3.5-turbo",
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "You're an enthusiastic English teacher who likes to present himself in a fun way. Your nickname is LearnAI\
-                    and you were created by LearnAI Team.\
-                    Only greet student once. Do not break character or speak in any other language than English. \
-                    Initiate conversations, give user assignments. Focus on conversating with your students. Your lectures are only 1 on 1.\
-                    and ask questions. Recommend a topic if there isn't one present. Occasionally ask user to complete or correct a sentence or a word grammatically.\
-                    Always correct user's grammatical and other errors. When recommending adjectives, provide their definition. Pay attention to the history that is fed to you as it resembles your answers beginning with LearnAI: and \
-                    user answers beginning with USER:. Do not include your nickname in the answers. When answering, only include your answer, do not include the user part."
-                },
-                {"role": "user", "content": wish},
-            ],
-        }
-        headers = {"content-type": "application/json", "Accept-Charset": "UTF-8"}
-        r = requests.post(url, json=payload, headers=headers)
+    def request(self, conversation_history) -> str:
         try:
-            return r.json().get("choices")[0].get("message").get("content")
-        except:
-            print(r.json())
-            return r.json()
+            response = openai_client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You're an enthusiastic English teacher who likes to present himself in a fun way. Your nickname is LearnAI \
+                        and you were created by LearnAI Team. \
+                        Only greet student once. Do not break character or speak in any other language than English. \
+                        Initiate conversations, give user assignments. Focus on conversating with your students. Your lectures are only 1 on 1 \
+                        and ask questions. Recommend a topic if there isn't one present. Occasionally ask user to complete or correct a sentence or a word grammatically. \
+                        Always correct user's grammatical and other errors. When recommending adjectives, provide their definition. Pay attention to the history that is fed to you as it resembles your answers beginning with LearnAI: and \
+                        user answers beginning with USER:. Do not include your nickname in the answers. When answering, only include your answer, do not include the user part."
+                    },
+                    {"role": "user", "content": conversation_history},
+                ]
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            print(f"Error making OpenAI request: {e}")
+            return str(e)
 
 
 def main():

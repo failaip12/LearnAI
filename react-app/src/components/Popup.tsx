@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import './PopupStyles.css'
 import '../routes/LoginRegisterStyles.css'
-import jwt_decode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 
-function Popup(props: {
-  title: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | React.ReactFragment | React.ReactPortal | null | undefined;
-  message: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | React.ReactFragment | React.ReactPortal | null | undefined;
+function Popup(props: Readonly<{
+  title: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | null | undefined;
+  message: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | null | undefined;
   onClose: React.MouseEventHandler<HTMLButtonElement> | undefined;
-}) {
+}>) {
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
   const [isLoginSuccessful, setIsLoginSuccessful] = useState(false);
@@ -26,9 +26,13 @@ function Popup(props: {
         return response.json();
       })
       .then(data => {
-        const decoded_jwt = jwt_decode(data.json)
-        const expire = decoded_jwt['expire']
-        document.cookie = 'jwt' + " = " + JSON.stringify(data) + "; expires = " + new Date(expire * 1000 + 100000) + "SameSite=None";
+        const decoded_jwt = jwtDecode(data.json);
+        const expire = decoded_jwt.expire;
+        if(!expire)
+        {
+          throw new Error('Login failed');
+        }
+        document.cookie = `jwt=${JSON.stringify(data)}; expires=${new Date(expire * 1000 + 100000)}; SameSite=Strict; Secure`;
         setIsLoginSuccessful(true);
       })
       .catch(error => {
